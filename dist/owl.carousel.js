@@ -2554,13 +2554,16 @@
 		var left,
 			clear = $.proxy(this.clear, this),
 			previous = this.core.dom.$items.eq(this.previous),
-			next = this.core.dom.$items.eq(this.next),
-			incoming = this.core.settings.animateIn,
-			outgoing = this.core.settings.animateOut;
+			next = this.core.dom.$items.eq(this.next);
 
 		if (this.core.current() === this.previous) {
 			return;
 		}
+
+		var incoming = next.find('[data-animateIn]:first').size()==0? this.core.settings.animateIn:next.find('[data-animateIn]:first').attr('data-animateIn'),
+			outgoing = previous.find('[data-animateOut]:first').size()==0? this.core.settings.animateOut:previous.find('[data-animateOut]:first').attr('data-animateOut');
+		this.clearItem(previous);
+		this.clearItem(next);
 
 		if (outgoing) {
 			left = this.core.coordinates(this.previous) - this.core.coordinates(this.next);
@@ -2568,14 +2571,31 @@
 				.addClass('animated owl-animated-out')
 				.addClass(outgoing)
 				.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', clear);
+
+			this.core.settings.oldAnimateOut = outgoing;
 		}
 
 		if (incoming) {
 			next.addClass('animated owl-animated-in')
 				.addClass(incoming)
 				.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', clear);
+
+			this.core.settings.oldAnimateIn = incoming;
 		}
 	};
+
+	//FIXED 支持animateIn\animateOut定义
+	Animate.prototype.clearItem = function() {
+		if(this.core.settings.oldAnimateIn||this.core.settings.oldAnimateOut){
+			this.core.dom.$stage.find('.'+this.core.settings.oldAnimateOut).css( { 'left': '' } )
+				.removeClass('animated owl-animated-out')
+				.removeClass(this.core.settings.oldAnimateOut)
+			this.core.dom.$stage.find('.'+this.core.settings.oldAnimateIn)
+				.removeClass('animated owl-animated-in')
+				.removeClass(this.core.settings.oldAnimateIn)
+			this.core.transitionEnd();
+		}
+	}
 
 	Animate.prototype.clear = function(e) {
 		$(e.target).css( { 'left': '' } )
